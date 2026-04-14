@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import FormProspecto from '@/components/FormProspecto'
 import PropuestaView from '@/components/PropuestaView'
 import type { FormData, Propuesta } from '@/lib/types'
@@ -71,20 +72,21 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: '#ffffff' }}>
       {/* Top bar */}
-      <div style={{ borderBottom: '1px solid #e4e4e7', padding: '0 24px' }}>
-        <div style={{ maxWidth: 672, margin: '0 auto', height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.02em', color: '#09090b' }}>
-            Codexia
-          </span>
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#71717a' }}>
-            Architect · Internal
-          </span>
+      <div style={{ borderBottom: '1px solid #e4e4e7', background: 'white', padding: '0 24px', position: 'sticky', top: 0, zIndex: 10 }}>
+        <div style={{ maxWidth: 800, margin: '0 auto', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Image src="/logo.png" alt="Codexia" height={22} width={0} style={{ width: 'auto', height: 22 }} priority />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#a1a1aa' }}>
+              Architect
+            </span>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a' }} />
+          </div>
         </div>
       </div>
 
       <main>
         {error && (
-          <div style={{ maxWidth: 672, margin: '24px auto', padding: '0 24px' }}>
+          <div style={{ maxWidth: 800, margin: '24px auto', padding: '0 24px' }}>
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '14px 18px' }}>
               <p style={{ fontSize: 13, color: '#dc2626', fontWeight: 600 }}>{error}</p>
             </div>
@@ -92,18 +94,9 @@ export default function HomePage() {
         )}
 
         {!propuesta ? (
-          <FormProspecto
-            form={form}
-            onChange={handleChange}
-            onSubmit={handleSubmit}
-            loading={loading}
-          />
+          <FormProspecto form={form} onChange={handleChange} onSubmit={handleSubmit} loading={loading} />
         ) : (
-          <PropuestaView
-            propuesta={propuesta}
-            empresa={form.empresa}
-            onReset={handleReset}
-          />
+          <PropuestaView propuesta={propuesta} form={form} onReset={handleReset} />
         )}
       </main>
     </div>

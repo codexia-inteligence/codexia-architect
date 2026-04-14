@@ -56,7 +56,7 @@ export default function FormProspecto({ form, onChange, onSubmit, loading }: Pro
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: 672, margin: '0 auto', padding: '56px 24px' }}>
+    <div style={{ width: '100%', maxWidth: 680, margin: '0 auto', padding: '56px 24px' }}>
 
       {/* Header */}
       <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#71717a', marginBottom: 16 }}>
