@@ -262,7 +262,9 @@ function drawOpcion(
   return y + 8
 }
 
-export async function generarPropuestaPDF(propuesta: Propuesta, form: FormData): Promise<void> {
+export type PDFMode = 'completa' | 'solo_a' | 'solo_b'
+
+export async function generarPropuestaPDF(propuesta: Propuesta, form: FormData, mode: PDFMode = 'completa'): Promise<void> {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const W = 210
@@ -334,11 +336,12 @@ export async function generarPropuestaPDF(propuesta: Propuesta, form: FormData):
   doc.rect(margin, y, contentWidth, 0.5, 'F')
   y += 14
 
-  // Options summary
-  for (const { label, opt, accent } of [
-    { label: 'Opción A — Solución completa', opt: propuesta.option_a, accent: negro as RGB },
-    { label: 'Opción B — Solución enfocada', opt: propuesta.option_b, accent: [6, 88, 246] as RGB },
-  ]) {
+  // Options summary — only show what's included
+  const summaryOpts = [
+    ...(mode !== 'solo_b' ? [{ label: 'Opción A — Solución completa', opt: propuesta.option_a, accent: negro as RGB }] : []),
+    ...(mode !== 'solo_a' ? [{ label: 'Opción B — Solución enfocada', opt: propuesta.option_b, accent: [6, 88, 246] as RGB }] : []),
+  ]
+  for (const { label, opt, accent } of summaryOpts) {
     doc.setFillColor(...accent)
     doc.rect(margin, y, 3, 22, 'F')
     doc.setFontSize(7)
@@ -359,19 +362,24 @@ export async function generarPropuestaPDF(propuesta: Propuesta, form: FormData):
   addPageFooter(doc, W, [6, 88, 246])
 
   // ── OPTION A ───────────────────────────────────────────────
-  doc.addPage()
-  addPageHeader(doc, W, margin, logoData, 'OPCIÓN A')
-  drawOpcion(doc, propuesta.option_a, 'Opción A — Solución completa', 'OPCIÓN A', negro, PAGE_TOP, W, margin, contentWidth, logoData)
-  addPageFooter(doc, W, negro)
+  if (mode !== 'solo_b') {
+    doc.addPage()
+    addPageHeader(doc, W, margin, logoData, 'OPCIÓN A')
+    drawOpcion(doc, propuesta.option_a, 'Opción A — Solución completa', 'OPCIÓN A', negro, PAGE_TOP, W, margin, contentWidth, logoData)
+    addPageFooter(doc, W, negro)
+  }
 
   // ── OPTION B ───────────────────────────────────────────────
-  doc.addPage()
-  addPageHeader(doc, W, margin, logoData, 'OPCIÓN B')
-  drawOpcion(doc, propuesta.option_b, 'Opción B — Solución enfocada', 'OPCIÓN B', [6, 88, 246], PAGE_TOP, W, margin, contentWidth, logoData)
-  addPageFooter(doc, W, [6, 88, 246])
+  if (mode !== 'solo_a') {
+    doc.addPage()
+    addPageHeader(doc, W, margin, logoData, 'OPCIÓN B')
+    drawOpcion(doc, propuesta.option_b, 'Opción B — Solución enfocada', 'OPCIÓN B', [6, 88, 246], PAGE_TOP, W, margin, contentWidth, logoData)
+    addPageFooter(doc, W, [6, 88, 246])
+  }
 
+  const suffix = mode === 'solo_a' ? '-OpcionA' : mode === 'solo_b' ? '-OpcionB' : ''
   const filename = form.empresa
-    ? `Codexia-Propuesta-${form.empresa.replace(/\s+/g, '-')}.pdf`
-    : 'Codexia-Propuesta.pdf'
+    ? `Codexia-Propuesta-${form.empresa.replace(/\s+/g, '-')}${suffix}.pdf`
+    : `Codexia-Propuesta${suffix}.pdf`
   doc.save(filename)
 }
