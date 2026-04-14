@@ -1,65 +1,111 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useState } from 'react'
+import FormProspecto from '@/components/FormProspecto'
+import PropuestaView from '@/components/PropuestaView'
+import type { FormData, Propuesta } from '@/lib/types'
+
+const DEFAULT_FORM: FormData = {
+  empresa: '',
+  contacto: '',
+  nicho: '',
+  problemas: [],
+  contexto: '',
+  herramientas: '',
+  perdidaMensual: null,
+  sedes: 1,
+}
+
+export default function HomePage() {
+  const [form, setForm] = useState<FormData>(DEFAULT_FORM)
+  const [loading, setLoading] = useState(false)
+  const [propuesta, setPropuesta] = useState<Propuesta | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  function handleChange(field: keyof FormData, value: FormData[keyof FormData]) {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  async function handleSubmit() {
+    setLoading(true)
+    setError(null)
+    setPropuesta(null)
+
+    try {
+      const res = await fetch('/api/generar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+
+      if (!res.ok) throw new Error('Error en el servidor')
+      if (!res.body) throw new Error('Sin respuesta')
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let raw = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        raw += decoder.decode(value, { stream: true })
+      }
+
+      const clean = raw.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim()
+      const parsed: Propuesta = JSON.parse(clean)
+      setPropuesta(parsed)
+    } catch (e) {
+      console.error(e)
+      setError('No se pudo generar la propuesta. Revisa la API key y vuelve a intentarlo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleReset() {
+    setPropuesta(null)
+    setForm(DEFAULT_FORM)
+    setError(null)
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div style={{ minHeight: '100vh', background: '#ffffff' }}>
+      {/* Top bar */}
+      <div style={{ borderBottom: '1px solid #e4e4e7', padding: '0 24px' }}>
+        <div style={{ maxWidth: 672, margin: '0 auto', height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.02em', color: '#09090b' }}>
+            Codexia
+          </span>
+          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#71717a' }}>
+            Architect · Internal
+          </span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+      </div>
+
+      <main>
+        {error && (
+          <div style={{ maxWidth: 672, margin: '24px auto', padding: '0 24px' }}>
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '14px 18px' }}>
+              <p style={{ fontSize: 13, color: '#dc2626', fontWeight: 600 }}>{error}</p>
+            </div>
+          </div>
+        )}
+
+        {!propuesta ? (
+          <FormProspecto
+            form={form}
+            onChange={handleChange}
+            onSubmit={handleSubmit}
+            loading={loading}
+          />
+        ) : (
+          <PropuestaView
+            propuesta={propuesta}
+            empresa={form.empresa}
+            onReset={handleReset}
+          />
+        )}
       </main>
     </div>
-  );
+  )
 }
